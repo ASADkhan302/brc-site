@@ -1,0 +1,603 @@
+BRC ZHOB DATABASE SCHEMA - PLAIN TEXT SQL
+Initial baseline only; coding agent must review, extend via migrations, and test on target MariaDB/MySQL.
+
+-- BRC Zhob initial database schema (MySQL 8 / MariaDB compatible baseline)
+-- Review with BRC before production. All identifiers use utf8mb4/InnoDB.
+CREATE DATABASE IF NOT EXISTS brc_zhob_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE brc_zhob_db;
+
+CREATE TABLE roles (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ code VARCHAR(40) NOT NULL UNIQUE,
+ name VARCHAR(80) NOT NULL,
+ description VARCHAR(255) NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+CREATE TABLE permissions (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ code VARCHAR(100) NOT NULL UNIQUE,
+ description VARCHAR(255) NULL
+) ENGINE=InnoDB;
+CREATE TABLE role_permissions (
+ role_id BIGINT UNSIGNED NOT NULL,
+ permission_id BIGINT UNSIGNED NOT NULL,
+ PRIMARY KEY(role_id, permission_id),
+ FOREIGN KEY(role_id) REFERENCES roles(id) ON DELETE CASCADE,
+ FOREIGN KEY(permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+CREATE TABLE users (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ role_id BIGINT UNSIGNED NOT NULL,
+ username VARCHAR(80) NOT NULL UNIQUE,
+ email VARCHAR(190) NULL UNIQUE,
+ password_hash VARCHAR(255) NOT NULL,
+ display_name VARCHAR(160) NOT NULL,
+ status ENUM('ACTIVE','INVITED','DISABLED','LOCKED') NOT NULL DEFAULT 'INVITED',
+ must_change_password TINYINT(1) NOT NULL DEFAULT 1,
+ last_login_at DATETIME NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ FOREIGN KEY(role_id) REFERENCES roles(id)
+) ENGINE=InnoDB;
+CREATE TABLE password_reset_tokens (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ user_id BIGINT UNSIGNED NOT NULL,
+ token_hash CHAR(64) NOT NULL UNIQUE,
+ expires_at DATETIME NOT NULL,
+ used_at DATETIME NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+ INDEX idx_reset_expiry(expires_at)
+) ENGINE=InnoDB;
+CREATE TABLE login_attempts (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ username_hash CHAR(64) NOT NULL,
+ ip_hash CHAR(64) NOT NULL,
+ attempted_at DATETIME NOT NULL,
+ was_successful TINYINT(1) NOT NULL DEFAULT 0,
+ INDEX idx_login_rate(username_hash, attempted_at),
+ INDEX idx_login_ip(ip_hash, attempted_at)
+) ENGINE=InnoDB;
+
+CREATE TABLE academic_years (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ name VARCHAR(30) NOT NULL UNIQUE,
+ starts_on DATE NULL,
+ ends_on DATE NULL,
+ is_current TINYINT(1) NOT NULL DEFAULT 0,
+ status ENUM('PLANNED','ACTIVE','CLOSED') NOT NULL DEFAULT 'PLANNED'
+) ENGINE=InnoDB;
+CREATE TABLE departments (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ name VARCHAR(120) NOT NULL UNIQUE,
+ slug VARCHAR(140) NOT NULL UNIQUE,
+ description TEXT NULL,
+ is_active TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB;
+CREATE TABLE classes (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ name VARCHAR(80) NOT NULL UNIQUE,
+ level_order SMALLINT NULL,
+ is_active TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB;
+CREATE TABLE sections (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ class_id BIGINT UNSIGNED NOT NULL,
+ name VARCHAR(60) NOT NULL,
+ UNIQUE(class_id,name),
+ FOREIGN KEY(class_id) REFERENCES classes(id)
+) ENGINE=InnoDB;
+CREATE TABLE subjects (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ department_id BIGINT UNSIGNED NULL,
+ code VARCHAR(40) NULL UNIQUE,
+ name VARCHAR(120) NOT NULL,
+ is_active TINYINT(1) NOT NULL DEFAULT 1,
+ FOREIGN KEY(department_id) REFERENCES departments(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+CREATE TABLE class_subjects (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ class_id BIGINT UNSIGNED NOT NULL,
+ subject_id BIGINT UNSIGNED NOT NULL,
+ academic_year_id BIGINT UNSIGNED NOT NULL,
+ is_compulsory TINYINT(1) NOT NULL DEFAULT 1,
+ UNIQUE(class_id,subject_id,academic_year_id),
+ FOREIGN KEY(class_id) REFERENCES classes(id),
+ FOREIGN KEY(subject_id) REFERENCES subjects(id),
+ FOREIGN KEY(academic_year_id) REFERENCES academic_years(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE staff_profiles (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ user_id BIGINT UNSIGNED NOT NULL UNIQUE,
+ employee_code VARCHAR(50) NULL UNIQUE,
+ department_id BIGINT UNSIGNED NULL,
+ designation VARCHAR(120) NOT NULL,
+ staff_type ENUM('TEACHING','ADMINISTRATIVE','SUPPORT') NOT NULL DEFAULT 'TEACHING',
+ qualification VARCHAR(255) NULL,
+ phone VARCHAR(40) NULL,
+ photo_path VARCHAR(255) NULL,
+ bio TEXT NULL,
+ is_public TINYINT(1) NOT NULL DEFAULT 0,
+ FOREIGN KEY(user_id) REFERENCES users(id),
+ FOREIGN KEY(department_id) REFERENCES departments(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+CREATE TABLE cadets (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ user_id BIGINT UNSIGNED NULL UNIQUE,
+ admission_no VARCHAR(60) NOT NULL UNIQUE,
+ roll_no VARCHAR(60) NULL UNIQUE,
+ full_name VARCHAR(160) NOT NULL,
+ father_name VARCHAR(160) NULL,
+ gender ENUM('BOY','GIRL','OTHER','NOT_STATED') NOT NULL,
+ date_of_birth DATE NULL,
+ class_id BIGINT UNSIGNED NULL,
+ section_id BIGINT UNSIGNED NULL,
+ academic_year_id BIGINT UNSIGNED NULL,
+ status ENUM('ACTIVE','ALUMNI','WITHDRAWN','SUSPENDED') NOT NULL DEFAULT 'ACTIVE',
+ photo_path VARCHAR(255) NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL,
+ FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE SET NULL,
+ FOREIGN KEY(section_id) REFERENCES sections(id) ON DELETE SET NULL,
+ FOREIGN KEY(academic_year_id) REFERENCES academic_years(id) ON DELETE SET NULL,
+ INDEX idx_cadet_name(full_name)
+) ENGINE=InnoDB;
+CREATE TABLE guardians (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ full_name VARCHAR(160) NOT NULL,
+ phone VARCHAR(40) NOT NULL,
+ email VARCHAR(190) NULL,
+ cnic VARCHAR(30) NULL,
+ address TEXT NULL
+) ENGINE=InnoDB;
+CREATE TABLE parent_profiles (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ user_id BIGINT UNSIGNED NOT NULL UNIQUE,
+ guardian_id BIGINT UNSIGNED NULL,
+ FOREIGN KEY(user_id) REFERENCES users(id),
+ FOREIGN KEY(guardian_id) REFERENCES guardians(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+CREATE TABLE cadet_guardians (
+ cadet_id BIGINT UNSIGNED NOT NULL,
+ guardian_id BIGINT UNSIGNED NOT NULL,
+ relationship VARCHAR(50) NULL,
+ is_primary TINYINT(1) NOT NULL DEFAULT 0,
+ verified_at DATETIME NULL,
+ PRIMARY KEY(cadet_id,guardian_id),
+ FOREIGN KEY(cadet_id) REFERENCES cadets(id) ON DELETE CASCADE,
+ FOREIGN KEY(guardian_id) REFERENCES guardians(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+CREATE TABLE teacher_assignments (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ staff_id BIGINT UNSIGNED NOT NULL,
+ class_subject_id BIGINT UNSIGNED NOT NULL,
+ section_id BIGINT UNSIGNED NULL,
+ academic_year_id BIGINT UNSIGNED NOT NULL,
+ UNIQUE(staff_id,class_subject_id,section_id,academic_year_id),
+ FOREIGN KEY(staff_id) REFERENCES staff_profiles(id),
+ FOREIGN KEY(class_subject_id) REFERENCES class_subjects(id),
+ FOREIGN KEY(section_id) REFERENCES sections(id) ON DELETE SET NULL,
+ FOREIGN KEY(academic_year_id) REFERENCES academic_years(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE attendance_sessions (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ class_id BIGINT UNSIGNED NOT NULL,
+ section_id BIGINT UNSIGNED NULL,
+ subject_id BIGINT UNSIGNED NULL,
+ teacher_id BIGINT UNSIGNED NOT NULL,
+ attendance_date DATE NOT NULL,
+ session_label VARCHAR(80) NULL,
+ status ENUM('DRAFT','SUBMITTED','LOCKED') NOT NULL DEFAULT 'DRAFT',
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ UNIQUE(class_id,section_id,subject_id,teacher_id,attendance_date,session_label),
+ FOREIGN KEY(class_id) REFERENCES classes(id),
+ FOREIGN KEY(section_id) REFERENCES sections(id) ON DELETE SET NULL,
+ FOREIGN KEY(subject_id) REFERENCES subjects(id) ON DELETE SET NULL,
+ FOREIGN KEY(teacher_id) REFERENCES staff_profiles(id)
+) ENGINE=InnoDB;
+CREATE TABLE attendance_records (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ session_id BIGINT UNSIGNED NOT NULL,
+ cadet_id BIGINT UNSIGNED NOT NULL,
+ status ENUM('PRESENT','ABSENT','LATE','LEAVE') NOT NULL,
+ remark VARCHAR(255) NULL,
+ UNIQUE(session_id,cadet_id),
+ FOREIGN KEY(session_id) REFERENCES attendance_sessions(id) ON DELETE CASCADE,
+ FOREIGN KEY(cadet_id) REFERENCES cadets(id)
+) ENGINE=InnoDB;
+CREATE TABLE assignments (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ teacher_id BIGINT UNSIGNED NOT NULL,
+ class_subject_id BIGINT UNSIGNED NOT NULL,
+ title VARCHAR(180) NOT NULL,
+ description TEXT NULL,
+ due_at DATETIME NULL,
+ max_marks DECIMAL(7,2) NULL,
+ status ENUM('DRAFT','PUBLISHED','CLOSED') NOT NULL DEFAULT 'DRAFT',
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(teacher_id) REFERENCES staff_profiles(id),
+ FOREIGN KEY(class_subject_id) REFERENCES class_subjects(id)
+) ENGINE=InnoDB;
+CREATE TABLE assignment_submissions (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ assignment_id BIGINT UNSIGNED NOT NULL,
+ cadet_id BIGINT UNSIGNED NOT NULL,
+ submission_text TEXT NULL,
+ file_path VARCHAR(255) NULL,
+ submitted_at DATETIME NULL,
+ marks_awarded DECIMAL(7,2) NULL,
+ feedback TEXT NULL,
+ status ENUM('DRAFT','SUBMITTED','GRADED','RETURNED') NOT NULL DEFAULT 'DRAFT',
+ UNIQUE(assignment_id,cadet_id),
+ FOREIGN KEY(assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
+ FOREIGN KEY(cadet_id) REFERENCES cadets(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE exams (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ academic_year_id BIGINT UNSIGNED NOT NULL,
+ name VARCHAR(160) NOT NULL,
+ exam_type VARCHAR(80) NOT NULL,
+ starts_on DATE NULL,
+ ends_on DATE NULL,
+ status ENUM('DRAFT','SCHEDULED','MARKING','REVIEW','PUBLISHED','CLOSED') NOT NULL DEFAULT 'DRAFT',
+ FOREIGN KEY(academic_year_id) REFERENCES academic_years(id)
+) ENGINE=InnoDB;
+CREATE TABLE exam_subjects (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ exam_id BIGINT UNSIGNED NOT NULL,
+ class_subject_id BIGINT UNSIGNED NOT NULL,
+ exam_date DATE NULL,
+ starts_at TIME NULL,
+ max_marks DECIMAL(7,2) NOT NULL,
+ UNIQUE(exam_id,class_subject_id),
+ FOREIGN KEY(exam_id) REFERENCES exams(id) ON DELETE CASCADE,
+ FOREIGN KEY(class_subject_id) REFERENCES class_subjects(id)
+) ENGINE=InnoDB;
+CREATE TABLE exam_duties (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ exam_id BIGINT UNSIGNED NOT NULL,
+ staff_id BIGINT UNSIGNED NOT NULL,
+ hall_name VARCHAR(100) NULL,
+ duty_date DATE NOT NULL,
+ duty_type VARCHAR(80) NULL,
+ status ENUM('ASSIGNED','CONFIRMED','COMPLETED') NOT NULL DEFAULT 'ASSIGNED',
+ FOREIGN KEY(exam_id) REFERENCES exams(id),
+ FOREIGN KEY(staff_id) REFERENCES staff_profiles(id)
+) ENGINE=InnoDB;
+CREATE TABLE exam_marks (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ exam_subject_id BIGINT UNSIGNED NOT NULL,
+ cadet_id BIGINT UNSIGNED NOT NULL,
+ marks_obtained DECIMAL(7,2) NULL,
+ remarks VARCHAR(255) NULL,
+ entered_by BIGINT UNSIGNED NULL,
+ reviewed_at DATETIME NULL,
+ UNIQUE(exam_subject_id,cadet_id),
+ FOREIGN KEY(exam_subject_id) REFERENCES exam_subjects(id) ON DELETE CASCADE,
+ FOREIGN KEY(cadet_id) REFERENCES cadets(id),
+ FOREIGN KEY(entered_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE hostel_blocks (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ name VARCHAR(100) NOT NULL UNIQUE,
+ gender_policy ENUM('BOYS','GIRLS','MIXED','UNSPECIFIED') NOT NULL DEFAULT 'UNSPECIFIED',
+ description TEXT NULL,
+ is_active TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB;
+CREATE TABLE hostel_rooms (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ block_id BIGINT UNSIGNED NOT NULL,
+ room_no VARCHAR(40) NOT NULL,
+ capacity SMALLINT UNSIGNED NOT NULL,
+ status ENUM('AVAILABLE','FULL','MAINTENANCE','INACTIVE') NOT NULL DEFAULT 'AVAILABLE',
+ UNIQUE(block_id,room_no),
+ FOREIGN KEY(block_id) REFERENCES hostel_blocks(id)
+) ENGINE=InnoDB;
+CREATE TABLE hostel_allocations (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ cadet_id BIGINT UNSIGNED NOT NULL,
+ room_id BIGINT UNSIGNED NOT NULL,
+ start_date DATE NOT NULL,
+ end_date DATE NULL,
+ status ENUM('ACTIVE','ENDED','CANCELLED') NOT NULL DEFAULT 'ACTIVE',
+ allocated_by BIGINT UNSIGNED NULL,
+ FOREIGN KEY(cadet_id) REFERENCES cadets(id),
+ FOREIGN KEY(room_id) REFERENCES hostel_rooms(id),
+ FOREIGN KEY(allocated_by) REFERENCES users(id) ON DELETE SET NULL,
+ INDEX idx_hostel_active(room_id,status)
+) ENGINE=InnoDB;
+CREATE TABLE warden_remarks (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ cadet_id BIGINT UNSIGNED NOT NULL,
+ staff_id BIGINT UNSIGNED NOT NULL,
+ remark TEXT NOT NULL,
+ visibility ENUM('ADMIN_ONLY','PARENT_AND_ADMIN','CADET_PARENT_ADMIN') NOT NULL DEFAULT 'ADMIN_ONLY',
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(cadet_id) REFERENCES cadets(id),
+ FOREIGN KEY(staff_id) REFERENCES staff_profiles(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE fee_types (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ name VARCHAR(120) NOT NULL,
+ description VARCHAR(255) NULL,
+ is_active TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB;
+CREATE TABLE fee_invoices (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ cadet_id BIGINT UNSIGNED NOT NULL,
+ invoice_no VARCHAR(60) NOT NULL UNIQUE,
+ issue_date DATE NOT NULL,
+ due_date DATE NULL,
+ total_amount DECIMAL(12,2) NOT NULL,
+ status ENUM('UNPAID','PARTIAL','PAID','OVERDUE','CANCELLED') NOT NULL DEFAULT 'UNPAID',
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(cadet_id) REFERENCES cadets(id)
+) ENGINE=InnoDB;
+CREATE TABLE fee_invoice_items (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ invoice_id BIGINT UNSIGNED NOT NULL,
+ fee_type_id BIGINT UNSIGNED NOT NULL,
+ description VARCHAR(180) NULL,
+ amount DECIMAL(12,2) NOT NULL,
+ FOREIGN KEY(invoice_id) REFERENCES fee_invoices(id) ON DELETE CASCADE,
+ FOREIGN KEY(fee_type_id) REFERENCES fee_types(id)
+) ENGINE=InnoDB;
+CREATE TABLE fee_payments (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ invoice_id BIGINT UNSIGNED NOT NULL,
+ amount DECIMAL(12,2) NOT NULL,
+ method ENUM('BANK_DEPOSIT','CASH','ONLINE','OTHER') NOT NULL,
+ reference_no VARCHAR(100) NULL,
+ slip_path VARCHAR(255) NULL,
+ status ENUM('PENDING_VERIFICATION','VERIFIED','REJECTED') NOT NULL DEFAULT 'PENDING_VERIFICATION',
+ verified_by BIGINT UNSIGNED NULL,
+ verified_at DATETIME NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(invoice_id) REFERENCES fee_invoices(id),
+ FOREIGN KEY(verified_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE admission_applications (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ application_ref VARCHAR(40) NOT NULL UNIQUE,
+ status ENUM('DRAFT','SUBMITTED','UNDER_REVIEW','CORRECTION_REQUIRED','APPROVED','REJECTED','CONVERTED') NOT NULL DEFAULT 'DRAFT',
+ candidate_name VARCHAR(160) NULL,
+ father_name VARCHAR(160) NULL,
+ class_studying VARCHAR(80) NULL,
+ medium_of_instruction VARCHAR(80) NULL,
+ dob_school_figures VARCHAR(30) NULL,
+ dob_words VARCHAR(120) NULL,
+ previous_exam_percentage DECIMAL(5,2) NULL,
+ expected_exam_class VARCHAR(80) NULL,
+ expected_exam_min_percent DECIMAL(5,2) NULL,
+ current_school_name VARCHAR(180) NULL,
+ personal_details_json LONGTEXT NULL,
+ contact_details_json LONGTEXT NULL,
+ submitted_at DATETIME NULL,
+ reviewed_by BIGINT UNSIGNED NULL,
+ reviewed_at DATETIME NULL,
+ review_note TEXT NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+ INDEX idx_admission_status(status,submitted_at),
+ INDEX idx_applicant_name(candidate_name)
+) ENGINE=InnoDB;
+CREATE TABLE admission_fee_details (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ application_id BIGINT UNSIGNED NOT NULL UNIQUE,
+ deposit_slip_no VARCHAR(100) NOT NULL,
+ deposit_date DATE NOT NULL,
+ bank_name_branch VARCHAR(180) NOT NULL,
+ account_no VARCHAR(100) NOT NULL,
+ amount_pkr DECIMAL(12,2) NOT NULL,
+ slip_file_path VARCHAR(255) NOT NULL,
+ verification_status ENUM('PENDING','VERIFIED','REJECTED') NOT NULL DEFAULT 'PENDING',
+ verified_by BIGINT UNSIGNED NULL,
+ verified_at DATETIME NULL,
+ verification_note VARCHAR(255) NULL,
+ FOREIGN KEY(application_id) REFERENCES admission_applications(id) ON DELETE CASCADE,
+ FOREIGN KEY(verified_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+CREATE TABLE admission_documents (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ application_id BIGINT UNSIGNED NOT NULL,
+ document_type VARCHAR(80) NOT NULL,
+ file_path VARCHAR(255) NOT NULL,
+ original_filename VARCHAR(190) NOT NULL,
+ uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(application_id) REFERENCES admission_applications(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+CREATE TABLE application_status_history (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ application_id BIGINT UNSIGNED NOT NULL,
+ old_status VARCHAR(40) NULL,
+ new_status VARCHAR(40) NOT NULL,
+ changed_by BIGINT UNSIGNED NULL,
+ note VARCHAR(255) NULL,
+ changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(application_id) REFERENCES admission_applications(id) ON DELETE CASCADE,
+ FOREIGN KEY(changed_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE alumni_profiles (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ user_id BIGINT UNSIGNED NULL UNIQUE,
+ full_name VARCHAR(160) NOT NULL,
+ kit_no VARCHAR(40) NOT NULL UNIQUE,
+ entry_no TINYINT UNSIGNED NULL,
+ wing VARCHAR(60) NULL,
+ passing_year YEAR NULL,
+ date_of_birth DATE NULL,
+ cnic VARCHAR(30) NULL UNIQUE,
+ phone VARCHAR(40) NOT NULL,
+ email VARCHAR(190) NOT NULL,
+ current_city VARCHAR(100) NULL,
+ current_designation VARCHAR(120) NULL,
+ organization VARCHAR(180) NULL,
+ address TEXT NULL,
+ profession VARCHAR(80) NULL,
+ organization_name VARCHAR(180) NULL,
+ linkedin_url VARCHAR(255) NULL,
+ post_brc_institution VARCHAR(180) NULL,
+ about_me TEXT NULL,
+ photo_path VARCHAR(255) NULL,
+ status ENUM('PENDING_REVIEW','APPROVED','REJECTED','ARCHIVED') NOT NULL DEFAULT 'PENDING_REVIEW',
+ public_directory_opt_in TINYINT(1) NOT NULL DEFAULT 0,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL,
+ INDEX idx_alumni_name(full_name),
+ INDEX idx_alumni_year(passing_year)
+) ENGINE=InnoDB;
+CREATE TABLE alumni_contribution_types (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ code VARCHAR(60) NOT NULL UNIQUE,
+ label VARCHAR(100) NOT NULL
+) ENGINE=InnoDB;
+CREATE TABLE alumni_contributions (
+ alumni_id BIGINT UNSIGNED NOT NULL,
+ contribution_type_id BIGINT UNSIGNED NOT NULL,
+ PRIMARY KEY(alumni_id,contribution_type_id),
+ FOREIGN KEY(alumni_id) REFERENCES alumni_profiles(id) ON DELETE CASCADE,
+ FOREIGN KEY(contribution_type_id) REFERENCES alumni_contribution_types(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE notices (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ title VARCHAR(200) NOT NULL,
+ slug VARCHAR(220) NOT NULL UNIQUE,
+ body MEDIUMTEXT NOT NULL,
+ category VARCHAR(80) NULL,
+ audience ENUM('PUBLIC','STAFF','CADETS','PARENTS','ALL_AUTHENTICATED') NOT NULL DEFAULT 'PUBLIC',
+ publish_at DATETIME NULL,
+ expires_at DATETIME NULL,
+ status ENUM('DRAFT','PUBLISHED','ARCHIVED') NOT NULL DEFAULT 'DRAFT',
+ created_by BIGINT UNSIGNED NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ FOREIGN KEY(created_by) REFERENCES users(id) ON DELETE SET NULL,
+ INDEX idx_notice_public(status,publish_at,expires_at)
+) ENGINE=InnoDB;
+CREATE TABLE notice_attachments (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ notice_id BIGINT UNSIGNED NOT NULL,
+ file_path VARCHAR(255) NOT NULL,
+ original_filename VARCHAR(190) NOT NULL,
+ FOREIGN KEY(notice_id) REFERENCES notices(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+CREATE TABLE gallery_albums (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ title VARCHAR(160) NOT NULL,
+ slug VARCHAR(180) NOT NULL UNIQUE,
+ category VARCHAR(80) NULL,
+ description TEXT NULL,
+ cover_image_path VARCHAR(255) NULL,
+ is_published TINYINT(1) NOT NULL DEFAULT 0,
+ published_at DATETIME NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+CREATE TABLE gallery_images (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ album_id BIGINT UNSIGNED NOT NULL,
+ image_path VARCHAR(255) NOT NULL,
+ caption VARCHAR(180) NULL,
+ alt_text VARCHAR(180) NOT NULL,
+ sort_order INT NOT NULL DEFAULT 0,
+ is_published TINYINT(1) NOT NULL DEFAULT 0,
+ FOREIGN KEY(album_id) REFERENCES gallery_albums(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+CREATE TABLE contact_messages (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ sender_name VARCHAR(160) NOT NULL,
+ sender_email VARCHAR(190) NOT NULL,
+ subject VARCHAR(180) NULL,
+ message TEXT NOT NULL,
+ status ENUM('NEW','IN_PROGRESS','RESOLVED','SPAM') NOT NULL DEFAULT 'NEW',
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+CREATE TABLE content_pages (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ title VARCHAR(180) NOT NULL,
+ slug VARCHAR(180) NOT NULL UNIQUE,
+ body MEDIUMTEXT NULL,
+ status ENUM('DRAFT','PUBLISHED') NOT NULL DEFAULT 'DRAFT',
+ updated_by BIGINT UNSIGNED NULL,
+ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ FOREIGN KEY(updated_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+CREATE TABLE site_settings (
+ setting_key VARCHAR(120) PRIMARY KEY,
+ setting_value TEXT NULL,
+ is_public TINYINT(1) NOT NULL DEFAULT 0,
+ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+CREATE TABLE notifications (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ user_id BIGINT UNSIGNED NOT NULL,
+ title VARCHAR(180) NOT NULL,
+ body TEXT NOT NULL,
+ target_url VARCHAR(255) NULL,
+ read_at DATETIME NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+ INDEX idx_notifications_user(user_id,read_at,created_at)
+) ENGINE=InnoDB;
+CREATE TABLE leave_applications (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ cadet_id BIGINT UNSIGNED NOT NULL,
+ submitted_by_user_id BIGINT UNSIGNED NOT NULL,
+ start_date DATE NOT NULL,
+ end_date DATE NOT NULL,
+ reason TEXT NOT NULL,
+ status ENUM('PENDING','APPROVED','REJECTED','CANCELLED') NOT NULL DEFAULT 'PENDING',
+ reviewed_by BIGINT UNSIGNED NULL,
+ reviewed_at DATETIME NULL,
+ review_note VARCHAR(255) NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(cadet_id) REFERENCES cadets(id),
+ FOREIGN KEY(submitted_by_user_id) REFERENCES users(id),
+ FOREIGN KEY(reviewed_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+CREATE TABLE messages (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ sender_user_id BIGINT UNSIGNED NOT NULL,
+ recipient_user_id BIGINT UNSIGNED NOT NULL,
+ subject VARCHAR(180) NULL,
+ body TEXT NOT NULL,
+ read_at DATETIME NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(sender_user_id) REFERENCES users(id),
+ FOREIGN KEY(recipient_user_id) REFERENCES users(id),
+ INDEX idx_message_recipient(recipient_user_id,read_at,created_at)
+) ENGINE=InnoDB;
+CREATE TABLE audit_logs (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ actor_user_id BIGINT UNSIGNED NULL,
+ action VARCHAR(100) NOT NULL,
+ entity_type VARCHAR(80) NOT NULL,
+ entity_id VARCHAR(80) NULL,
+ summary VARCHAR(255) NULL,
+ ip_address VARCHAR(45) NULL,
+ user_agent VARCHAR(255) NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(actor_user_id) REFERENCES users(id) ON DELETE SET NULL,
+ INDEX idx_audit_entity(entity_type,entity_id),
+ INDEX idx_audit_actor(actor_user_id,created_at)
+) ENGINE=InnoDB;
+
+-- Seed roles only. No default administrator or shared password is created.
+INSERT IGNORE INTO roles(code,name,description) VALUES
+ ('SUPER_ADMIN','Super Administrator','Full system control; initial account must be created securely'),
+ ('ADMIN','Administrator','Administrative functions granted by permissions'),
+ ('TEACHER','Teacher','Assigned academic functions'),
+ ('CADET','Cadet / Student','Own academic and personal records'),
+ ('PARENT','Parent','Linked child information only'),
+ ('ALUMNI','Alumni','Approved alumni functions, if enabled');
+
+INSERT IGNORE INTO alumni_contribution_types(code,label) VALUES
+ ('GUEST_SPEAKER','Guest Speaker'),('CHIEF_GUEST','Chief Guest'),('MENTOR','Mentor'),
+ ('SPONSOR_CADET','Sponsor a Cadet'),('JOB_REFERRAL','Job Referral'),('DONATION','Donation'),('NONE','None');

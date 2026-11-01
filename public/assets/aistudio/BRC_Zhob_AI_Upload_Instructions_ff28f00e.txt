@@ -1,0 +1,31 @@
+BRC ZHOB - AI UPLOAD INSTRUCTIONS (NO ZIP REQUIRED)
+
+You can use the project files separately. Do not upload a ZIP archive.
+
+PRIMARY RECOMMENDED ATTACHMENTS
+1. BRC_Zhob_AI_Studio_Project_Blueprint.pdf (9.8 MB) - complete project mechanism and 12 full individual page mockups plus original source screenshots.
+2. BRC_Zhob_Database_Schema.sql - initial MySQL/MariaDB schema.
+3. BRC_Zhob_Official_Logo.jpg - official logo to preserve unchanged.
+4. BRC_Approved_Designs_01-06.jpg and BRC_Approved_Designs_07-12.jpg - two visual boards of all 12 approved designs.
+5. BRC_Portal_Source_References.jpg - Teacher/Cadet/Parent/Admin source screenshots.
+6. BRC_Form_Source_References.jpg - original alumni and admissions form references.
+7. BRC_Zhob_Full_Project_Specification.txt - complete plain-text specification.
+
+PROMPT
+Open BRC_Zhob_Master_Build_Prompt.txt, copy the entire text, and paste it into the AI coding agent.
+
+WHICH FILES SHOULD I USE?
+- If the current mode accepts PDFs: attach the PDF, SQL, logo and relevant JPEG reference sheets; then paste the master prompt.
+- If the current mode rejects PDFs or only accepts text/images: attach BRC_Zhob_Full_Project_Specification.txt, the SQL (or its TXT copy), the logo and the JPEG reference sheets; then paste the master prompt.
+- If it refuses the .sql extension, upload BRC_Zhob_Database_Schema.txt or paste its contents into the coding agent.
+
+IMPORTANT ABOUT GOOGLE AI STUDIO
+File support can vary by product surface and mode. Gemini's document workflow supports PDF input, but some AI Studio Agent experiences may accept text and images only. In that case, use the full TXT specification and JPEG references instead of the PDF.
+
+WHAT THIS HANDOFF IS
+A detailed design/requirements handoff. It is NOT an already-built PHP application. The AI coding agent still needs to create the source project, database migrations, setup process, and tests.
+
+SCOPE ACCURACY
+12 visual page designs are individually approved. Notices and Contact Us do not have individual approved screenshots. Teacher/Cadet/Parent portal images are source references, and the Admin dashboard is approved but its individual management sub-pages still need implementation. The specification requires all these pages to be built.
+
+All mockup names, images, counts, fees, dates, exam details, contact details, bank details and statistics are placeholders until confirmed by BRC. The generated application must be tested in the actual XAMPP environment before deployment.

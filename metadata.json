@@ -1,0 +1,6 @@
+{
+  "name": "BRC Zhob — Integrated Website & College Management System",
+  "description": "Official public website, online admissions, alumni registration, and role-based College Management System (Admin, Teacher, Cadet, Parent portals) for Balochistan Residential College Zhob.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

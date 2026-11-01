@@ -1,0 +1,106 @@
+BRC ZHOB - MASTER BUILD PROMPT FOR GOOGLE AI STUDIO
+
+ROLE
+Act as a senior PHP architect, MySQL database engineer, security engineer, UI/UX implementer and QA lead. Build the complete working Balochistan Residential College Zhob integrated public website and college management system. This is a real coding task, not a mockup-only task.
+
+FILES TO ATTACH (NO ZIP REQUIRED)
+1. BRC_Zhob_AI_Studio_Project_Blueprint.pdf - preferred full visual + written specification; contains all individual approved page references and the original portal/form screenshots.
+2. BRC_Zhob_Full_Project_Specification.txt - complete plain-text copy of all project requirements, route map, workflows, roles, design system, architecture, security, XAMPP plan and acceptance tests. Use this if the current AI mode cannot read PDF.
+3. BRC_Zhob_Database_Schema.sql (or BRC_Zhob_Database_Schema.txt) - initial MySQL/MariaDB schema baseline; inspect and extend it safely.
+4. BRC_Zhob_Official_Logo.jpg - original BRC logo; preserve the artwork unchanged.
+5. BRC_Approved_Designs_01-06.jpg and BRC_Approved_Designs_07-12.jpg - visual contact sheets of the 12 approved individual designs.
+6. BRC_Portal_Source_References.jpg - original Teacher, Cadet, Parent and Admin portal references.
+7. BRC_Form_Source_References.jpg - original alumni/admission form references.
+
+The master prompt itself is BRC_Zhob_Master_Build_Prompt.txt. Paste its entire content into the coding agent after attaching the files. If the interface supports PDFs, attach the PDF as the primary reference. If the interface rejects PDFs, attach the plain-text specification and the four JPEG reference sheets instead. Never require a ZIP archive.
+
+FIRST ACTION
+Read the PDF if supported; otherwise read the full plain-text specification and inspect all supplied reference images. Read the SQL file before editing. Build an implementation checklist from the specification. Inspect the actual workspace and the installed XAMPP, PHP and MariaDB/MySQL versions if available. State any compatibility issue. Do not claim completion until files exist, routes work and acceptance tests pass.
+
+NON-NEGOTIABLE OWNER DECISIONS
+- Use XAMPP Apache + PHP + MySQL/MariaDB. Do not switch to React, Next.js, Node-only or Firebase.
+- Use HTML5, CSS3, Bootstrap 5.x, vanilla JavaScript, PDO and a consistent icon library (Bootstrap Icons or Font Awesome Free).
+- Develop locally first, but prepare architecture for later online hosting.
+- English initial release; keep the structure localization-ready for Urdu later.
+- Support both boys and girls for admissions.
+- Root URL opens the public Homepage without login. Login is optional, never a barrier to browsing.
+- One central database: brc_zhob_db. Public content, applications, alumni and all portals use the same database with access controls.
+- Roles: Admin/Super Admin, Teacher, Cadet/Student and Parent. No open public role registration.
+
+VISUAL FIDELITY
+Use the 12 approved individual page references embedded in the PDF as visual targets. Use the supplied original logo file exactly; do not regenerate or replace it. Preserve the approved deep maroon/burgundy + gold + warm cream palette, subtle BRC watermark, premium reduced-transparency glassmorphism, mostly opaque panels (about 88-96% surface opacity), premium consistent icons, restrained shadows and readable high-contrast text. Do not make glass panels too transparent. Ensure responsive layouts at 1440, 1024, 768, 390 and 360 px. Do not use the screenshots as page backgrounds or render static images instead of HTML.
+
+PAGE SCOPE - BUILD EVERYTHING, NOT ONLY THE 12 PREVIEWS
+Public pages: Home, About, Principal Profile, Vision/Mission, History, Achievements, Academics, Faculty directory and individual staff profiles, Hostel Life, Results/search/result detail, Gallery/albums, Notices/detail/download, Contact, Alumni Registration, Online Admissions/tracking, Login, Forgot/Reset Password, Privacy and Terms.
+Admin pages/modules: Dashboard, admission list/detail/review, alumni list/detail/review, cadets create/list/detail/edit/archive, parent accounts and child linking, staff/teachers, departments, classes, sections, subjects, academic years, teacher assignments, timetables, attendance/reports, assignments, exams/exam duties, results/grading/report cards, hostels/rooms/allocations/warden notes, fee structures/invoices/payments, notices, gallery/albums, website CMS/homepage settings, reports/exports, users/roles/permissions, notifications, audit log, backups and settings.
+Teacher: dashboard, assigned classes, roster, timetable, attendance, assignments, submissions/grading, exam duties, authorized results entry, authorized hostel remarks, notices/messages/profile.
+Cadet: dashboard, profile, classes, timetable, assignments/submissions, own attendance, published results/report card, own fee information, approved hostel information, notices/notifications/settings.
+Parent: dashboard, linked/verified children, attendance, published results/report cards, fees, leave applications, approved hostel details, teacher messages, notices/notifications/profile.
+Supporting screens: application tracking, admission review, notice detail, gallery album, result details, staff detail, notifications, forgot/reset password, 403/404, printable report card, fee receipt and official form printouts.
+Notices & Contact Us do not have approved individual mockups yet. Design them consistently using the approved design system in the PDF. Teacher/Cadet/Parent source screenshots are included in PDF references; implement complete portal experiences from their requirements. The Admin dashboard is approved; its individual management pages must still be built.
+
+PUBLIC-FIRST AND AUTHENTICATION MECHANISM
+1. Guest enters / and sees public Home. No login is required to browse public pages or access Apply Now.
+2. Login is a separate optional action.
+3. Verify credentials using password_verify against password_hash values. Rate-limit login attempts. Regenerate session ID after login.
+4. Redirect by database role: Admin/Super Admin -> /admin/dashboard; Teacher -> /teacher/dashboard; Cadet -> /cadet/dashboard; Parent -> /parent/dashboard.
+5. Recheck role, permission, user status and resource ownership server-side on every private request. Hiding links is not security.
+6. No public account self-selection for privileged roles. Admin provisions teacher/cadet/parent accounts. Approved admission converts to a cadet once, without duplicate records. Parent accounts must be linked to verified guardian records.
+7. Public header/footer remain available while signed in; users can navigate back to public pages.
+
+ADMISSION WORKFLOW AND EXACT SOURCE FIELDS
+Public Apply Now does not require an existing cadet account. Wizard steps: Personal Info -> Academic Info -> Contact -> Fee -> Review/Submit. The user's screenshots in PDF are source of truth for Academic Info and Fee fields.
+Academic fields: Name of candidate (according to school record); Father's Name (according to school record); Class in which studying; Medium of Instruction; Date of Birth according to school record (in figures); Date of Birth (in words); Performance rated as % in previous exam; expected annual examination class; securing more than % marks; Name of School in which studying. Preserve DOB alteration warning; ask BRC to confirm final official wording.
+Fee fields: Deposit Slip No; Date of Deposit; Bank Name & Branch; Account No; Amount (PKR); Attach Deposit Slip (PDF/JPG, maximum 2 MB); non-refundable fee warning. Real bank details, fee amount, deadlines and policy text must come from BRC. Personal/contact step fields not fully shown in the source screenshots must be configurable and marked for owner confirmation; do not invent extra mandatory fields.
+Save draft safely, validate every step server-side, upload to private storage, create unique non-sequential application reference and status history. Fee starts PENDING_VERIFICATION. Upload is not payment verification. Authorized finance admin manually verifies and records decision. Approval/rejection has reason and audit log. Approved app converts to cadet transactionally and only once. Tracking must not expose other applicants.
+
+ALUMNI WORKFLOW AND FIELD SOURCE
+Use the exact fields visible in source alumni screenshot embedded in PDF: Full Name; Kit No (BRZ-XXXX); Entry No (1-9); Wing (Jinnah, Iqbal, Liaquat, Fatima - confirm exact official options); Passing Year; DOB; CNIC; Phone; Email; Current City; Current Designation; Organization; Address; Profession (Doctor, Engineer, Teacher, Army, Police, Business, Other); Organization Name; LinkedIn Profile; Post BRC Education Institution; About Me; optional image/photo upload; contribution options Guest Speaker, Chief Guest, Mentor, Sponsor a Cadet, Job Referral, Donation, None. None is mutually exclusive. Submit with acknowledgement of Code of Conduct and Privacy Policy text supplied by BRC. Submission starts pending admin review. CNIC, DOB, address and private phone are never public. Public alumni directory only if explicit consent and admin approval.
+
+ACADEMICS, ATTENDANCE, EXAMS AND RESULTS
+Admin configures academic years, classes, sections, subjects, class-subject links and teacher assignments. Teacher sees only assigned classes. Attendance session/records must prevent duplicates and edits must be audited. Teachers create assignments, cadets submit and teachers grade with feedback. Admin creates exams, dates, halls and duties. Teachers enter marks only for assigned classes/subjects. Validate marks against max marks. Admin reviews/locks/publishes results. Only published results become visible. Public result search requires adequate identifiers, rate limits and returns minimal approved fields; prevent roll-number enumeration. Report card totals and grades are computed by a service using grading rules approved by BRC.
+
+HOSTEL AND FEE WORKFLOWS
+Admin manages blocks, rooms, capacity and allocations. Enforce room capacity. Sensitive warden remarks and room data must be permission/ownership restricted. Admin sets fee heads/invoices; parents/cadets can read only authorized records. Payment slip upload never marks paid. Finance-authorized user verifies/rejects with actor/time and audit. Do not add GPS tracking, biometrics or payment gateways unless separately approved and actually configured.
+
+NOTICES, GALLERY AND CMS
+Admin creates/edits/archives notices with category, date, expiry, audience and optional attachment. Public users see only published public notices; role notices are audience-restricted. Gallery albums contain optimized photos, captions and alt text; use authorized photos. CMS content is editable but must not execute arbitrary PHP/HTML. Public website pages load published DB content.
+
+DATABASE
+Use the attached SQL as a starting schema, not a fixed final limit. Review, extend and migrate safely. Use InnoDB, utf8mb4, foreign keys, indexes, unique constraints based on confirmed institution policies, transactions for multi-table business operations, a repeatable migrations approach and demo seed data clearly marked DEMO. Add missing timetable structures and report-card aggregation service/schema as required. Keep local and production database instances separate. Do not wipe user data during migrations.
+
+SECURITY AND PRIVACY
+- password_hash/password_verify; no plaintext or default shared credentials.
+- Strict sessions, ID rotation, HttpOnly, SameSite, Secure cookies in HTTPS, inactivity expiry.
+- CSRF on every state-changing POST and AJAX mutation.
+- PDO prepared statements only; output escaping; strict validation; rate limits.
+- Role + permission + ownership checks server-side on every private route.
+- Safe file uploads: allowlisted extension/MIME/signature, max size, randomized names, no executable/script/HTML uploads, private storage outside public web root, authorized download controller.
+- Deposit slip PDF/JPG max 2 MB verified server-side. Alumni image safe image formats only.
+- Audit sensitive admin actions without logging passwords/tokens.
+- Backups protected and restore-tested.
+- Production HTTPS, least-privilege DB user, secrets outside web root, debug off, installer disabled after first Super Admin, directory listing off, security headers.
+- Hide unconfigured Google OAuth, SMTP, SMS and gateway features; never fake them.
+
+TECHNICAL ARCHITECTURE
+Use a PHP MVC/layered structure with one front controller (public/index.php), route registry, controllers, services, models/repositories via PDO, middleware, reusable view components, public/role layouts, config, database migrations, public assets, private storage, scripts and tests. Suggested folders: app/Controllers, app/Core, app/Middleware, app/Models, app/Services, app/Views; config; database/schema.sql + migrations; public/index.php + assets; routes/web.php; storage/private_uploads/logs/exports/backups; scripts; tests; .env.example; .gitignore; README.md. PHP version must be verified against actual XAMPP runtime; use compatible syntax. Use Asia/Karachi timezone for display.
+
+BUILD ORDER
+Phase 0 inspect actual workspace and installed versions. Phase 1 foundation/router/PDO/security/schema/migrations/secure installer. Phase 2 public website and CMS. Phase 3 admissions and alumni. Phase 4 authentication and account lifecycle. Phase 5 Admin modules. Phase 6 Teacher portal. Phase 7 Cadet portal. Phase 8 Parent portal. Phase 9 reports, notifications, files and backups. Phase 10 test all routes, permissions, forms, upload handling, responsive UI and XAMPP deployment.
+
+DELIVERABLES
+Generate the complete PHP source project in the workspace, not merely snippets: all routes/controllers/services/models/views, responsive CSS/JS, approved local assets, SQL schema and migrations, demo seed data clearly labeled, .env.example, .gitignore, secure one-time Super Admin setup, README with exact XAMPP steps, test checklist with actual pass/fail, known limitations and remaining BRC-confirmation content. Use the approved individual preview images as design targets; do not output only static mockups. Do not claim 100% complete unless every acceptance test has been run and passed or an explicit blocker is documented.
+
+ACCEPTANCE CHECKLIST
+- Root shows homepage without login; all public routes and navigation work.
+- Login routes all four roles correctly; cross-role access is blocked server-side.
+- Parent-child ownership, teacher assignment and cadet record isolation are verified by tampering tests.
+- Admission fields match screenshot; fee slip max size/type enforced on server; unique reference/tracking/status works; manual payment review required; approval conversion is one-time.
+- Alumni fields match reference; None mutually exclusive; admin approval; private personal data stays private.
+- Attendance duplicates prevented; marks range validated; only published results visible; report card totals correct.
+- Hostel capacity enforced; fee payment status controlled by finance role.
+- Dashboard metrics from DB, CMS content editable, notices/gallery work, audit logs and backup restore tested.
+- No dead buttons, PHP warnings, JS console errors or hardcoded mockup facts. Responsive at 1440/1024/768/390/360 px.
+
+START NOW
+Read the attached PDF completely, inspect the SQL, then inspect the project workspace and environment. Create a task tracker, create the actual project files and begin implementation. Continue phase by phase. If the coding environment has a context/tool limit, save progress in a project status file and resume from the next unchecked task. Never claim a module was implemented unless the code exists and has been tested.

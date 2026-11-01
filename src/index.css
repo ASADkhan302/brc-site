@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --brc-canvas: #FFFDF9;
+    --brc-card: #FFFFFF;
+    --brc-container: #FAF8F5;
+    --brc-maroon: #7A1C24;
+    --brc-maroon-dark: #60141B;
+    --brc-amber: #FBBF24;
+    --brc-emerald: #059669;
+    --brc-slate-900: #0F172A;
+    --brc-slate-600: #475569;
+    --brc-border: #E2E8F0;
+
+    --font-serif: "Playfair Display", Georgia, serif;
+    --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: "JetBrains Mono", monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--brc-canvas);
+    color: var(--brc-slate-900);
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, .font-editorial {
+    font-family: var(--font-serif);
+    text-wrap: balance;
+  }
+}
+
+.font-mono-tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.brc-glass-cream {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.brc-glass-maroon {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.brc-crest-watermark {
+  background-image: url('/assets/aistudio/BRC_Zhob_Official_Logo_369f56a6.jpg');
+  background-repeat: no-repeat;
+  background-position: right 2rem center;
+  background-size: 220px;
+}
+
+#printArea {
+  display: none;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  #printArea {
+    display: block !important;
+    width: 100% !important;
+  }
+  .slip-page {
+    page-break-after: always;
+    break-after: page;
+  }
+  .slip-page:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+}

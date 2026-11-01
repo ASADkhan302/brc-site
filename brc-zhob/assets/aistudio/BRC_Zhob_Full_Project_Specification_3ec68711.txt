@@ -1,0 +1,892 @@
+BRC ZHOB - FULL PROJECT SPECIFICATION (PLAIN TEXT)
+Use this text document if the AI upload interface does not accept PDF files.
+The approved visual design screenshots are supplied separately as JPEG contact sheets and individual images.
+All names, photos, numbers, dates, fees, results, contacts and sample entries shown in mockups are placeholders until confirmed by BRC.
+
+==========================================================================================
+
+
+##########################################################################################
+READ FIRST
+##########################################################################################
+
+# BRC ZHOB — GOOGLE AI STUDIO BUILD PACK
+
+**Purpose:** This ZIP is the single hand-off package for planning and building the Balochistan Residential College Zhob website and integrated college portal system with XAMPP, PHP and MySQL/MariaDB.
+
+## Start here
+1. Extract this ZIP.
+2. Open Google AI Studio (or your coding agent) and attach/upload this ZIP as project context.
+3. Open `06_AI_STUDIO_PROMPTS/MASTER_BUILD_PROMPT.md` and paste the entire prompt into the coding agent.
+4. Tell the agent to read `04_PROJECT_SPEC/` and `05_DATABASE/` before editing files.
+5. Ask it to create the project in its workspace and implement it, not just describe it.
+
+## What is included
+- `02_APPROVED_DESIGNS/`: 12 approved individual page mockups (optimized high-quality JPG) plus supplemental overview collages (JPG).
+- `03_ORIGINAL_USER_REFERENCES/`: the official logo and source screenshots for admissions and the original teacher/cadet/parent/admin portal concepts.
+- `04_PROJECT_SPEC/`: requirements, route/page map, roles, workflows, design system, architecture, XAMPP/deployment, security and acceptance tests.
+- `05_DATABASE/`: initial relational schema and data dictionary/relationship notes.
+- `06_AI_STUDIO_PROMPTS/`: master prompt and continuation prompt for multi-stage coding.
+- `07_TRACKING/`: an implementation checklist for the coding agent.
+
+## Important scope status
+The individually approved visual page designs are: Homepage, Online Admission, Alumni Registration, Login, Admin Dashboard, About Us, Principal's Profile, Academics, Faculty & Staff, Hostel Life, Results and Gallery.
+
+Notices & Announcements and Contact Us were not individually designed/approved yet. Teacher, Cadet and Parent portal screenshots were supplied as references, but their individual page systems still need implementation and, where useful, additional detailed visual review. The remaining Admin sub-pages also need full implementation. The specification describes them so the project can be coded without pretending they already have approved individual mockups.
+
+## Accuracy and content rules
+- Use the supplied official BRC logo asset; do not redraw, stylize, replace or mix it with generated logos.
+- Treat all names, portraits, counts, dates, grades, fees, addresses, phone numbers, emails, exam records and other copy visible in AI mockups as **sample placeholders**, unless independently supplied and confirmed by BRC.
+- Never invent official statistics or contact details. Store editable website content in the database and label demo content clearly.
+- The two admission reference screenshots are the source of truth for the visible Academic Information and Fee Payment fields. Do not silently add mandatory fields not present in those references. Personal/contact steps must be configurable and marked for college confirmation until the official field list is provided.
+- Google sign-in is optional and must remain hidden/disabled unless OAuth credentials and callback configuration are actually set up.
+- Fee deposit slip verification is manual by an authorized administrator unless a genuine payment gateway is separately integrated.
+
+## What this ZIP is not
+This is a design + requirements + architecture hand-off pack, not an already-built PHP application. The included master prompt instructs the coding agent to generate the full working source project, SQL schema, setup process and tests. AI-generated code still must be run and tested locally; no prompt can guarantee flawless production code without testing and review.
+
+
+##########################################################################################
+PROJECT BLUEPRINT
+##########################################################################################
+
+# PROJECT BLUEPRINT
+## Balochistan Residential College Zhob — Integrated College Website & Management System
+
+**Project type:** Responsive public website + admissions + role-based Learning/College Management System (LMS/CMS)
+
+**Confirmed owner decisions**
+- Technology target: XAMPP (Apache), PHP, MySQL/MariaDB.
+- Delivery target: develop and test locally first; prepare for online hosting afterwards.
+- Public homepage is visible to everyone without login.
+- Login is optional; authentication is required only for private portals and protected actions.
+- Account roles: Administrator, Teacher, Cadet/Student, Parent. Alumni registration is public and subject to admin approval; alumni portal/directory features can be enabled by policy.
+- Cadet admissions must support boys and girls. Do not assume separate campus/hostel policy beyond what the college confirms.
+- Website language: English for initial release; structure should allow later Urdu localization without redesign.
+- Online admission applications are required.
+- Priority: build the integrated system, not disconnected static mockups.
+
+## Product goals
+1. Present BRC Zhob professionally to visitors and prospective applicants.
+2. Allow applicants to submit admissions online and track application status.
+3. Give authorized administrators a secure central control panel.
+4. Give teachers only their assigned classes and authorized academic tools.
+5. Give cadets their own academic/hostel/fee information.
+6. Give parents only the records of children linked and verified to their accounts.
+7. Maintain alumni registration and review.
+8. Use one normalized database as the source of truth.
+9. Produce printable/downloadable official documents where authorized.
+10. Support local XAMPP deployment first and an HTTPS production deployment later.
+
+## Primary navigation model
+### Public website (no login required)
+Home | About Us | Admissions | Academics | Faculty & Staff | Hostel Life | Results | Gallery | Notices | Contact Us | Alumni Registration | Login
+
+“Login” must not block public browsing. The public menu and footer remain available to visitors and signed-in users. A signed-in user can navigate back to public pages.
+
+### Private portal landing after login
+- Admin → `/admin/dashboard`
+- Teacher → `/teacher/dashboard`
+- Cadet → `/cadet/dashboard`
+- Parent → `/parent/dashboard`
+
+Server-side authorization must enforce the role on every protected route. Hiding a menu item is not an authorization check.
+
+## Brand and design direction
+- Primary: deep BRC maroon/burgundy.
+- Secondary: restrained premium gold.
+- Surfaces: warm cream, ivory and white.
+- Typography: readable sans-serif for UI; restrained serif for large editorial headings if it matches references.
+- Visual treatment: premium, reduced-transparency glassmorphism. Glass panels must remain substantially opaque enough for comfortable reading; no excessive blur, low contrast or translucent text overlays.
+- Official logo: use only the supplied original logo file. Keep its artwork and colors unchanged.
+- Watermark: use a faint, low-contrast version of the official logo in selected hero/background/card surfaces; never use it behind dense text where it harms legibility.
+- Icons: use one consistent icon family (Bootstrap Icons or Font Awesome Free); no emoji as primary interface icons.
+- Cards: measured radii, restrained gold edge accents, subtle shadows, clear state colors.
+- Use the generated previews as visual guides for composition, not as literal data sources or screenshots to embed in the live website.
+- Responsive breakpoints: wide desktop 1440px, laptop 1024px, tablet 768px, mobile 390px and 360px. No horizontal overflow.
+
+## Operating assumptions
+- All operational records belong to the institution and are editable by authorized roles.
+- Every user must have a unique account. Initial admin setup must be secure; do not ship a known default password.
+- Admission, alumni and contact forms are public; protect them with CSRF, validation, rate limits and spam controls.
+- All student records, marks, attendance, payments and uploaded documents are private by default.
+- Database backups and private documents must not be directly accessible through public URLs.
+
+
+##########################################################################################
+PAGE ROUTE MAP
+##########################################################################################
+
+# PAGE INVENTORY, URLS AND NAVIGATION
+
+Use clean, lowercase routes. Keep a route registry and named route helpers; do not scatter hard-coded links across templates. URLs below are recommended canonical paths.
+
+## Public website
+| Page | Route | Access | Individual approved visual? |
+|---|---|---|---|
+| Home | `/` | Guest | Yes |
+| About Us | `/about` | Guest | Yes |
+| Principal's Profile | `/about/principal` | Guest | Yes |
+| Vision & Mission | `/about/vision-mission` | Guest | Covered by About page spec; not separately approved |
+| History | `/about/history` | Guest | Not individually designed |
+| Achievements | `/about/achievements` | Guest | Not individually designed |
+| Academics | `/academics` | Guest | Yes |
+| Faculty & Staff | `/faculty` | Guest | Yes |
+| Staff profile | `/faculty/{slug}` | Guest | Detail page to implement from faculty cards |
+| Hostel Life | `/hostel-life` | Guest | Yes |
+| Results landing | `/results` | Guest | Yes |
+| Result search/detail | `/results/search`, `/results/{public-token}` | Guest, limited published data | Search UI shown; detailed privacy rules required |
+| Gallery | `/gallery` | Guest | Yes |
+| Gallery album | `/gallery/{album-slug}` | Guest | Not separately designed |
+| Notices | `/notices` | Guest | Not individually designed yet |
+| Notice detail/download | `/notices/{slug}` | Guest | Not individually designed yet |
+| Contact Us | `/contact` | Guest | Not individually designed yet |
+| Alumni Registration | `/alumni/register` | Guest | Yes |
+| Application wizard | `/admissions/apply` | Guest | Yes (design reference covers academic and fee stages) |
+| Admission tracking | `/admissions/track` | Applicant with reference/token | Not individually designed |
+| Login | `/login` | Guest | Yes |
+| Forgot password | `/forgot-password` | Guest | Not individually designed |
+| Privacy / terms | `/privacy`, `/terms` | Guest | Basic accessible pages required |
+
+## Authentication
+- `POST /login`, `POST /logout`, `GET /login`, `GET/POST /forgot-password`, `GET/POST /reset-password/{token}`.
+- No public self-service role selection that lets a user become Admin/Teacher/Cadet/Parent.
+- Account provisioning is controlled by Admin. Applicant admission and alumni registration are separate public workflows.
+
+## Admin portal
+| Page | Route |
+|---|---|
+| Dashboard | `/admin/dashboard` |
+| Admissions list/detail/review | `/admin/admissions`, `/admin/admissions/{id}` |
+| Alumni list/detail/review | `/admin/alumni`, `/admin/alumni/{id}` |
+| Cadets | `/admin/cadets`, `/admin/cadets/create`, `/admin/cadets/{id}` |
+| Parents/linking | `/admin/parents`, `/admin/parents/{id}/children` |
+| Teachers/staff | `/admin/staff`, `/admin/staff/create`, `/admin/staff/{id}` |
+| Departments | `/admin/departments` |
+| Classes/sections/subjects | `/admin/academics/classes`, `/admin/academics/sections`, `/admin/academics/subjects` |
+| Timetable/assignments | `/admin/academics/timetable`, `/admin/academics/teacher-assignments` |
+| Attendance | `/admin/attendance`, `/admin/attendance/reports` |
+| Assignments | `/admin/assignments` |
+| Examinations/duties | `/admin/exams`, `/admin/exams/{id}`, `/admin/exam-duties` |
+| Results/grading | `/admin/results`, `/admin/grading-scales`, `/admin/report-cards` |
+| Hostels/rooms/allocations | `/admin/hostels`, `/admin/hostels/rooms`, `/admin/hostels/allocations` |
+| Fees/invoices/payments | `/admin/fees`, `/admin/fees/invoices`, `/admin/fees/payments` |
+| Notices | `/admin/notices` |
+| Gallery/albums | `/admin/gallery`, `/admin/gallery/albums` |
+| Website CMS | `/admin/content/pages`, `/admin/content/homepage` |
+| Reports | `/admin/reports` |
+| Users/roles/permissions | `/admin/users`, `/admin/roles`, `/admin/permissions` |
+| Notifications | `/admin/notifications` |
+| Audit log | `/admin/audit-log` |
+| Backup/settings | `/admin/backups`, `/admin/settings` |
+
+## Teacher portal
+`/teacher/dashboard`, `/teacher/classes`, `/teacher/classes/{id}`, `/teacher/students`, `/teacher/timetable`, `/teacher/attendance`, `/teacher/assignments`, `/teacher/submissions`, `/teacher/exams/duties`, `/teacher/results`, `/teacher/hostel-remarks`, `/teacher/notices`, `/teacher/messages`, `/teacher/profile`.
+
+## Cadet portal
+`/cadet/dashboard`, `/cadet/profile`, `/cadet/classes`, `/cadet/timetable`, `/cadet/assignments`, `/cadet/submissions`, `/cadet/attendance`, `/cadet/results`, `/cadet/report-card`, `/cadet/fees`, `/cadet/hostel`, `/cadet/notices`, `/cadet/notifications`, `/cadet/settings`.
+
+## Parent portal
+`/parent/dashboard`, `/parent/children`, `/parent/children/{id}`, `/parent/attendance`, `/parent/results`, `/parent/report-cards`, `/parent/fees`, `/parent/leave-applications`, `/parent/hostel`, `/parent/messages`, `/parent/notices`, `/parent/notifications`, `/parent/profile`.
+
+## Navigation rules
+- Public header/footer always link to public website pages, regardless of login state.
+- Portal sidebar contains only items the role is allowed to access.
+- Breadcrumbs identify the current area and allow safe navigation back.
+- Use POST for state-changing actions; GET must not change data.
+- On forbidden access return 403 or redirect safely; never expose another user's private record.
+- Result search must not enumerate student records. Use a combination of required identifiers and publish only approved result fields.
+
+
+##########################################################################################
+FUNCTIONAL WORKFLOWS
+##########################################################################################
+
+# PROJECT MECHANISM — HOW THE SYSTEM WORKS
+
+## 1. Public visitor and homepage
+1. Visitor opens `/` and immediately sees the public homepage; login is optional.
+2. Public pages load published data from the database (homepage settings, notices, gallery albums, programs and faculty profiles).
+3. Unpublished content and private records never appear publicly.
+4. Login opens the dedicated sign-in screen; public navigation remains accessible.
+
+## 2. Login and role routing
+1. User submits username/email and password over HTTPS in production.
+2. Server validates input, rate-limits attempts and verifies password hash.
+3. Server regenerates the session ID, stores the authenticated user ID and role/permission context, and records last login.
+4. Server redirects by database role: Admin → `/admin/dashboard`; Teacher → `/teacher/dashboard`; Cadet → `/cadet/dashboard`; Parent → `/parent/dashboard`.
+5. Every subsequent protected request rechecks authentication, active status, role permission and record ownership.
+6. Logout invalidates the session server-side. Password reset uses single-use, expiring tokens.
+
+## 3. Online admission lifecycle
+1. Guest opens Apply Now; no existing cadet login is required.
+2. Applicant moves through a multi-step wizard. Preserve the reference stepper: Personal Info → Academic Info → Contact → Fee.
+3. Use the exact visible fields from the supplied reference images for Academic Info and Fee. Personal/Contact fields not present in those references must be configured only after BRC confirms the official field list; do not invent extra mandatory fields.
+4. Save a draft in a short-lived server session or persistent application draft keyed by a secure random token. Validate every step server-side.
+5. Applicant uploads documents using allowlisted MIME types, extension/signature checks, size limits and randomized filenames. Store files outside the public web root.
+6. On submit, generate a non-sequential application reference, store status `SUBMITTED`, and write status history.
+7. Applicant gets a confirmation page and secure tracking instructions. Email/SMS notifications are optional integrations and must not be faked.
+8. Admin reviews, requests correction if configured, verifies fee deposit manually, then approves/rejects with reason and audit log.
+9. Only after approval does an authorized admin convert the application to a cadet record and create/activate account. Prevent duplicate cadet records.
+
+### Admission fields supplied by the user screenshots
+**Academic Information — use labels as close as practical to the reference:**
+- Name of candidate (according to school record)
+- Father's Name (according to school record)
+- Class in which studying
+- Medium of Instruction
+- Date of Birth according to school record (in figures)
+- Date of Birth (in words)
+- Performance rated as % in previous exam
+- Expected annual examination class
+- Expected “securing more than % marks” value
+- Name of School in which studying
+- Warning: “Cutting, omission and erasing in Date of Birth is strictly prohibited and the same leads to disqualification.” (confirm exact official wording before public launch)
+
+**Fee Payment Details:**
+- Deposit Slip No
+- Date of Deposit
+- Bank Name & Branch
+- Account No
+- Amount (PKR)
+- Attach Deposit Slip (PDF/JPG, maximum 2 MB)
+- Non-refundable fee warning; actual bank details, fee amount and dates must be supplied by BRC, not invented.
+
+## 4. Alumni registration lifecycle
+1. Public user opens Alumni Registration.
+2. Form collects the exact fields shown in the source alumni screenshot (see `CONTENT_AND_FIELD_SOURCE_OF_TRUTH.md`).
+3. User submits; status becomes `PENDING_REVIEW`; acknowledgement is shown.
+4. Admin checks duplicate Kit No / Entry No / email, reviews record and approves or rejects.
+5. Approved alumni can appear in a public directory only if the user consented and Admin enables publication. Sensitive fields (CNIC, phone, address, DOB) are never public.
+
+## 5. Teacher academic workflow
+1. Admin creates academic year, class, section, subjects, teacher accounts and teacher-class/subject assignments.
+2. Teacher signs in and sees only assigned classes and tasks.
+3. Teacher selects class/date and records attendance. Prevent duplicate attendance for the same cadet, class and session; allow correction with audit history.
+4. Teacher creates assignments and due dates; cadets submit allowed file types.
+5. Teacher grades submissions and gives feedback; cadet and linked parent can read released grades.
+6. For exams, Admin creates exam schedule and assigns duties/halls; teachers see assigned duties only.
+7. Teacher enters marks only for assigned subjects; marks are validated and submitted for approval/publishing according to Admin workflow.
+
+## 6. Cadet workflow
+- Cadet dashboard summarizes own timetable, pending assignments, attendance, latest published results, notices and fee status.
+- Cadet can submit assignments and see teacher feedback.
+- Cadet cannot edit marks, attendance, fees or hostel allocations.
+- Only the cadet's own records are queried and displayed.
+
+## 7. Parent workflow
+- Admin verifies guardian relationship and links parent account to one or more cadets.
+- Parent dashboard selects an authorized child; all pages filter by the verified parent-child link.
+- Parent sees attendance, published results, invoice/payment status, leave requests, approved hostel details and communication from assigned teacher.
+- Parent cannot edit official marks or attendance.
+
+## 8. Admin management workflow
+- Admin CRUD for cadets, guardians, teachers, departments, classes, sections, subjects, academic years, timetables, hostels, rooms, fees, examinations, notices, pages and gallery.
+- Dangerous actions require confirmation and audit log; destructive actions should prefer archive/soft-delete where records have financial/academic history.
+- Admin dashboard metrics are computed from database queries; never hardcode sample mockup numbers.
+- Reports use filters, pagination and permission checks; exports must not expose private data to unauthorized roles.
+
+## 9. Results publishing
+- Exam is created with academic year, classes, subject rows, schedule and status.
+- Authorized teacher enters subject marks; validation checks maximum marks, numeric range and required entries.
+- Admin reviews/locks/publishes results.
+- Only published results become visible to cadet/parent/public search. Public lookup should require sufficient identifiers and return the minimum approved information. Add anti-enumeration/rate-limit protections.
+- PDF report card includes verified institution branding, candidate name/roll number/class, exam, subject marks, totals, grades, issue date and verification reference.
+
+## 10. Fees and manual deposit verification
+- Admin configures fee heads and invoices; do not hardcode fee values from mockups.
+- Applicant or parent submits payment/deposit reference and slip upload.
+- Status begins `PENDING_VERIFICATION`; authorized finance admin verifies against real bank evidence and records who/when/decision.
+- Do not mark payment paid automatically because a file was uploaded.
+- Future payment gateway integration is a separate project requiring real provider credentials.
+
+## 11. Notices, gallery and CMS
+- Admin creates/edits/archives notices with category, publish date, expiry, audience and optional attachments.
+- Public users see only published public notices; teacher/cadet/parent notices can be audience-restricted.
+- Gallery manager creates albums, uploads optimized images, captions and alt text; photos are served from safe paths.
+- Public pages and homepage content are edited through a permission-gated CMS; never allow arbitrary PHP/HTML execution from CMS fields.
+
+## 12. Backups and online hosting
+- Local data and online data are separate database instances; do not silently sync/overwrite.
+- Backup process creates dated database and uploads backups outside public web root, records status and allows authorized restore after confirmation.
+- Production uses HTTPS, secure secrets in server environment, database user with least privileges, disabled setup route, debug off and restricted backups/uploads.
+
+
+##########################################################################################
+ROLES AND PERMISSIONS
+##########################################################################################
+
+# ROLES, PERMISSIONS AND DATA VISIBILITY
+
+## Roles
+- **Guest:** browse public pages; submit admission/alumni/contact forms; track own application only with application reference plus secure token/verification.
+- **Admin:** manage the whole platform according to assigned permission set. A Super Admin role can assign roles and system permissions. Sensitive actions are audited.
+- **Teacher:** access only assigned classes, students, timetable, attendance, assignments, exam duties and authorized result entry. Teachers cannot alter fee settings, user roles or another teacher's assignments unless explicitly granted.
+- **Cadet:** access own profile, class/timetable, assignments, own attendance, published results, own fee status and authorized hostel information.
+- **Parent:** access only linked/verified child or children. Parent cannot view any other cadet's data.
+- **Alumni applicant/member:** public applicant submits registration; after approval an alumni record/account/directory entry may be enabled according to BRC policy.
+
+## Permission matrix (summary)
+| Feature | Guest | Admin | Teacher | Cadet | Parent |
+|---|---:|---:|---:|---:|---:|
+| View public pages | Yes | Yes | Yes | Yes | Yes |
+| Apply for admission | Yes | Admin can enter/review | No | Existing cadet should not duplicate | No |
+| Review/approve admissions | No | Yes | No | No | No |
+| Manage users/roles | No | Yes, permission-gated | No | No | No |
+| View all cadets | No | Permission-gated | Assigned only | Own only | Linked child only |
+| Mark attendance | No | Yes/override, audited | Assigned classes | No | No |
+| View own attendance | No | Yes | Assigned class | Own | Linked child |
+| Enter marks | No | Yes/override, audited | Assigned subject/class | No | No |
+| View published results | Published public subset only | Yes | Assigned classes | Own | Linked child |
+| Manage fees/payments | No | Yes | No | Own read-only | Linked child read-only |
+| Hostel records | Public summary only | Yes | Only explicitly granted notes | Own approved info | Linked child approved info |
+| Publish notices | No | Yes | Optional permission | No | No |
+| Manage gallery/pages | No | Yes | No | No | No |
+
+## Enforcement requirements
+- Use RBAC middleware and resource-level ownership checks on the server.
+- Never rely on a hidden link/button as security.
+- Every query for cadet/parent/teacher data must include the current user's allowed relationship/assignment constraints.
+- Log administrator overrides, result edits, fee verification, admission decisions, account creation/deactivation and role/permission changes.
+- Use CSRF tokens for all state-changing forms.
+- Use password hashing (`password_hash` / `password_verify`), session ID regeneration at login, secure cookie flags in production and inactivity timeout.
+- No plaintext passwords, no default shared admin password, no public role self-selection.
+
+
+##########################################################################################
+DESIGN SYSTEM
+##########################################################################################
+
+# DESIGN SYSTEM & REFERENCE MAPPING
+
+## Approved page reference files
+| Page | Reference image |
+|---|---|
+| Homepage | `02_APPROVED_DESIGNS/01_Homepage_Approved.png` |
+| Online Admission | `02_APPROVED_DESIGNS/02_Online_Admission_Approved.png` |
+| Alumni Registration | `02_APPROVED_DESIGNS/03_Alumni_Registration_Approved.png` |
+| Login / Sign In | `02_APPROVED_DESIGNS/04_Login_SignIn_Approved.png` |
+| Admin Dashboard | `02_APPROVED_DESIGNS/05_Admin_Dashboard_Approved.png` |
+| About Us | `02_APPROVED_DESIGNS/06_About_Us_Approved.png` |
+| Principal's Profile | `02_APPROVED_DESIGNS/07_Principals_Profile_Approved.png` |
+| Academics | `02_APPROVED_DESIGNS/08_Academics_Approved.png` |
+| Faculty & Staff | `02_APPROVED_DESIGNS/09_Faculty_Staff_Approved.png` |
+| Hostel Life | `02_APPROVED_DESIGNS/10_Hostel_Life_Approved.png` |
+| Results | `02_APPROVED_DESIGNS/11_Results_Approved.png` |
+| Gallery | `02_APPROVED_DESIGNS/12_Gallery_Approved.png` |
+
+## Color tokens (starting values; refine to match approved mockups)
+- `--brc-maroon-950: #3E080D` (deepest backgrounds)
+- `--brc-maroon-900: #540B12` (primary shell)
+- `--brc-maroon-800: #720F19` (primary surfaces/buttons)
+- `--brc-maroon-700: #8D1722` (active emphasis)
+- `--brc-gold-500: #D5A83D` (main gold)
+- `--brc-gold-300: #F0D18A` (light gold)
+- `--brc-cream-50: #FFFDF8` (main surface)
+- `--brc-cream-100: #F7F0E5` (secondary surface)
+- `--brc-ink: #23191A` (body text)
+- `--brc-muted: #71676A` (secondary text)
+- `--brc-border: #E6D6B8` (light borders)
+- `--brc-success: #247A50`, `--brc-warning: #A36A13`, `--brc-danger: #B4232C`, `--brc-info: #226A9B` for status meanings only.
+
+## Layout and reusable components
+- `PublicHeader`: official logo/name, public menu, optional Login CTA, accessible mobile menu.
+- `PublicFooter`: official name, verified contact details, quick links, social links only if official.
+- `HeroBanner`: real/approved campus image, dark maroon gradient for contrast, page title, breadcrumb, subtle BRC seal watermark.
+- `PublicSidebar`: internal section navigation on content-heavy pages; on mobile becomes a collapsible section menu.
+- `GlassPanel`: low-transparency solid surface, readable text, restrained shadow and gold accent.
+- `StatCard`, `FeatureCard`, `ProfileCard`, `NoticeCard`, `DataTable`, `SearchBar`, `FilterTabs`, `StatusBadge`, `Stepper`, `FileUpload`, `EmptyState`, `ConfirmDialog`, `Toast`, `Pagination`.
+- `PortalShell`: left sidebar, top bar with page title/search/notifications/profile, responsive content area.
+- `FormField`: visible label, required marker, help/error text and accessible association.
+
+## Visual rules
+1. Match each approved design's overall hierarchy, section order and density; adapt dimensions responsibly to real content and viewport.
+2. Use the official image asset for the logo. Do not recreate or substitute it with AI logo art.
+3. Use the logo watermark subtly (generally 4–10% opacity depending on image/background) and never put it beneath high-density body text.
+4. “Reduced transparency” is intentional: glass panels should be mostly opaque (about 88–96% surface opacity); blur is a subtle enhancement, not the content background.
+5. Use gold sparingly for active states, call-to-action buttons, borders and icons. Main body text on cream must be dark and high contrast.
+6. Avoid tiny text, cramped tables, uncontrolled gradients, excessive animation, and giant empty panels.
+7. Buttons and cards must be real, working controls; no decorative fake action buttons.
+8. Use actual verified BRC photos where provided/authorized. Otherwise use labeled temporary stock placeholders and make them replaceable through admin CMS.
+9. Names, photos, counters and dates in generated mockups are placeholders until BRC confirms them.
+10. Build accessible keyboard navigation, visible focus states, reduced-motion respect and semantic heading order.
+
+## Page-specific visual requirements
+Use the matching approved reference image in the table. Missing pages must reuse these same tokens, header/footer and portal shell rather than inventing another theme.
+
+
+##########################################################################################
+TECHNICAL ARCHITECTURE
+##########################################################################################
+
+# TECHNICAL ARCHITECTURE
+
+## Required stack
+- Apache through XAMPP.
+- PHP 8.2+ style code (use features compatible with the PHP version actually bundled with the target XAMPP install; state the required PHP version in README after checking runtime).
+- MySQL/MariaDB through XAMPP; use InnoDB, utf8mb4 and portable SQL.
+- PDO for all DB operations with prepared statements.
+- HTML5, CSS3, Bootstrap 5.x and vanilla JavaScript. Use local vendor assets where possible so the website is usable in a local/offline demo.
+- Use one icon library consistently (Bootstrap Icons or Font Awesome Free).
+- No Node/React/Next.js replacement. This is a PHP/MySQL XAMPP project unless the owner approves a stack change.
+
+## Directory architecture (recommended)
+```text
+brc-zhob/
+├── app/
+│   ├── Controllers/ (Public, Auth, Admin, Teacher, Cadet, Parent)
+│   ├── Core/ (Router, Database, View, Session, Csrf, Validator, Response)
+│   ├── Middleware/ (AuthMiddleware, RoleMiddleware, PermissionMiddleware, CsrfMiddleware)
+│   ├── Models/
+│   ├── Services/ (Admissions, Alumni, Attendance, Results, Fees, Uploads, Notifications, Backups)
+│   └── Views/ (layouts, components, public, auth, admin, teacher, cadet, parent)
+├── config/ (app.php, database.php, security.php; secrets excluded from Git)
+├── database/ (schema.sql, seed_roles.sql, migrations/)
+├── public/ (index.php, .htaccess, assets/css, assets/js, assets/images, vendor)
+├── routes/ (web.php)
+├── storage/ (private_uploads, logs, exports, backups)  [deny direct web access]
+├── tests/ (unit, feature, manual QA)
+├── scripts/ (create-admin.php, backup.php, health-check.php)
+├── .env.example
+├── .gitignore
+└── README.md
+```
+
+## Request lifecycle
+Browser → Apache rewrite → `public/index.php` front controller → Router → middleware (session, CSRF, auth, role, permission) → controller → service/model via PDO → view/layout → response.
+
+## Engineering rules
+- Use a single front controller and route table; do not create dozens of duplicate unrelated PHP entry points.
+- Keep SQL in models/repositories/services, not in templates.
+- Use controllers for HTTP orchestration and services for business logic.
+- Use reusable layouts and components; keep public and role portal shells separate but visually consistent.
+- Validate server-side, escape output with `htmlspecialchars`, and use prepared SQL.
+- Use POST/Redirect/GET after mutations; add CSRF tokens and transaction boundaries for multi-table operations.
+- Use pagination and indexed queries for lists; do not load all cadets/results at once.
+- Use transactions for admissions submit/approval, fee verification, result publishing, cadet account creation and attendance batches.
+- Keep application config/credentials outside public document root; never commit real secrets.
+- Use explicit timezone configuration (Asia/Karachi) and store timestamps consistently; display local Pakistan time.
+- Create readable error pages and server logs; never show stack traces/database passwords in production.
+
+## Asset handling
+- Official logo is a user-supplied image; store it unchanged in `public/assets/images/brand/` and optionally create size-optimized copies while preserving original.
+- Hero/campus photography must be verified/authorized; use placeholders until supplied.
+- Uploads: store under `storage/private_uploads/` with random filenames and metadata in DB; serve through an authorized download controller, not direct path.
+- Never allow PHP, script, HTML or executable files to be uploaded.
+
+
+##########################################################################################
+CONTENT AND FIELD SOURCE OF TRUTH
+##########################################################################################
+
+# CONTENT & FIELD SOURCE OF TRUTH
+
+## Branding
+- Official institution name: **Balochistan Residential College Zhob**.
+- Common short name: **BRC Zhob**.
+- Establishment year appears as **2016** in the supplied logo/reference; confirm official wording before publication.
+- Location context: Zhob, Balochistan, Pakistan.
+- Logo file: `03_ORIGINAL_USER_REFERENCES/01_Official_BRC_Logo.jpg`.
+
+## Alumni Registration — fields visible in user-provided form
+### Personal Details
+- Full Name
+- Kit No (BRZ-XXXX)
+- Entry No (1–9)
+- Wing (shown options: Jinnah, Iqbal, Liaquat, Fatima — confirm official list)
+- Passing Year
+- Date of Birth
+- CNIC
+- Phone
+- Email
+- Current City
+- Current Designation
+- Organization
+- Address
+
+### Professional Details
+- Profession (shown choices: Doctor, Engineer, Teacher, Army, Police, Business, Other)
+- Organization Name
+- LinkedIn Profile
+- Post BRC Education Institution
+
+### Alumni Contribution
+- About Me
+- Image URL upload / photo upload (implementation should use secure file upload; an optional URL can be added only if policy allows)
+- Checkboxes: Guest Speaker, Chief Guest, Mentor, Sponsor a Cadet, Job Referral, Donation, None.
+- Validation: “None” cannot be selected with another contribution option.
+- Submit Registration
+- Acknowledgement: agreement to Alumni Code of Conduct & Privacy Policy (official policy text to be supplied by BRC).
+
+## Academic Admission fields
+See `FUNCTIONAL_WORKFLOWS.md`; screenshots retained in `03_ORIGINAL_USER_REFERENCES/07_Admission_Academic_Info_Original.jpg` and fee screenshot(s).
+
+## Unverified placeholders — never publish as fact without confirmation
+The visual mockups contain illustrative names, principal names/photos, teacher names/photos, applicant/cadet names, staff counts, students counts, hostel block/room counts, academic success rates, marks, examination dates, fee values, event dates, admissions deadlines, phone numbers, email addresses, bank names/account numbers, address details, social URLs and notice text. Do not treat those mockup values as confirmed college records.
+
+## Required content handover before production
+BRC must confirm: official logo preferred variant; principal name/title/photo/message; official address/contact/website/email; staff directory and permissions for portraits; academic programs/subjects; approved admissions eligibility and every personal/contact field; real bank/payment instructions and fee schedule; hostel facilities/policies; examination/result publication policy; verified statistics; current notices/dates; public gallery images and photo consent; privacy policy and alumni code of conduct.
+
+
+##########################################################################################
+SECURITY AND PRIVACY
+##########################################################################################
+
+# SECURITY, PRIVACY AND DATA INTEGRITY REQUIREMENTS
+
+- Passwords: `password_hash(PASSWORD_DEFAULT)` and `password_verify`; allow password rehash; no plaintext or reversible storage.
+- Sessions: `session.use_strict_mode=1`, regenerate session ID after login/privilege changes, HttpOnly, SameSite=Lax/Strict, Secure in HTTPS production, idle timeout and full server-side logout.
+- Authorization: server-side role + permission + ownership checks on every private request.
+- SQL: PDO prepared statements only; no string-concatenated user input in SQL.
+- XSS: escape output by context; sanitize rich text with a strict allowlist; do not execute uploaded/user-supplied markup.
+- CSRF: token validation on every state-changing POST, including logout and AJAX mutations.
+- Rate limiting: login, password reset, admission tracking and public form submissions. Avoid revealing whether an email/account exists.
+- File upload: allow only required extensions and MIME/signature combinations (e.g. PDF/JPEG/PNG as configured); random names; max sizes; verify actual content; reject executable content; store outside public web root; scan if host supports it; log uploader and owner; download only after authorization.
+- Admission deposit slip rule from supplied screenshot: PDF/JPG max 2 MB. If PNG is later allowed, get owner approval first.
+- Alumni image: allow safe image types only; re-encode images if possible; enforce size and dimensions.
+- Data minimization: CNIC, DOB, addresses, guardian phone, marks, fee/hostel records and deposit slips are private. Do not show in public directories or open search endpoints.
+- Result search: rate-limit; require adequate identifiers; avoid incremental roll-number enumeration; show minimal public-safe data only after official publication.
+- Audit: record actor, action, entity, entity ID, timestamp, IP/user agent where policy permits, and change summary for sensitive operations. Do not log passwords, session tokens or full sensitive documents.
+- Database: enforce foreign keys, unique constraints and indexes; use transactions; soft-delete/archival for linked academic/financial records; protect backups.
+- Production: HTTPS, least-privilege database account, secrets outside web root, debug off, setup route disabled, directory listing off, security headers and regular patching.
+- Backup: encrypted where feasible, access restricted, rotation and documented restore test. Backup is not complete until restore is verified.
+- Do not add live GPS tracking, biometrics, payment gateways or third-party sign-in without explicit college requirement and proper consent/configuration.
+
+
+##########################################################################################
+XAMPP SETUP AND DEPLOYMENT
+##########################################################################################
+
+# XAMPP INSTALLATION, LOCAL RUN AND ONLINE DEPLOYMENT
+
+## Local development
+1. Install XAMPP and start Apache + MySQL from the XAMPP Control Panel.
+2. Extract the generated source project into `C:\xampp\htdocs\brc-zhob\` (Windows default path).
+3. Create database `brc_zhob_db` in phpMyAdmin, or use the project's installer.
+4. Copy `.env.example` to the local config file described by the project README. Set DB host/name/user/password for the local XAMPP instance. Never commit real credentials.
+5. Import `database/schema.sql` and role/permission seed data, or run the safe installer command.
+6. Configure Apache document root to the project's `public/` directory using a local VirtualHost, or use the documented `http://localhost/brc-zhob/public/` fallback.
+7. Run the one-time setup wizard to create the first Super Admin. It must require a strong unique password; no known default admin credentials.
+8. Sign in as Admin, configure verified college content and test all roles using separate demo accounts.
+
+## Example VirtualHost (optional, recommended)
+```apache
+<VirtualHost *:80>
+    ServerName brc-zhob.local
+    DocumentRoot "C:/xampp/htdocs/brc-zhob/public"
+    <Directory "C:/xampp/htdocs/brc-zhob/public">
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+```
+Add `127.0.0.1 brc-zhob.local` to the Windows hosts file (`C:\Windows\System32\drivers\etc\hosts`) and restart Apache. Then open `http://brc-zhob.local`.
+
+## Pre-launch local checklist
+- Apache and MySQL start cleanly.
+- Installer creates schema without duplicate tables and disables itself afterward.
+- No raw files in `/storage` can be downloaded directly.
+- Guest can view public site and submit forms.
+- Each role can only see permitted pages/records.
+- Admission uploads and alumni photos obey size/MIME limits.
+- Database backup and restore are tested on a copy.
+- All routes work on mobile and desktop.
+- Replace every mockup placeholder before production use.
+
+## Production hosting
+- Choose PHP/MySQL hosting compatible with the project's PHP baseline.
+- Point the domain/document root to `public/` only.
+- Set environment secrets on the server; use a restricted DB user, not root.
+- Enable HTTPS, secure cookies, production error handling and backups.
+- Move private upload and backup directories outside public web root.
+- Configure mail only with verified SMTP provider credentials; do not simulate successful email delivery.
+- Import the database using migrations/backup procedure and verify records.
+- Keep local and production databases separate. Never copy local demo data over production without explicit review.
+
+
+##########################################################################################
+IMPLEMENTATION PLAN
+##########################################################################################
+
+# IMPLEMENTATION PLAN — BUILD TO COMPLETION
+
+## Phase 0 — Inspect and plan
+- Read all files in this build pack and inspect all images.
+- Confirm XAMPP/PHP/MariaDB version assumptions from the actual environment where available.
+- Create an implementation checklist and route/component plan.
+- Do not modify approved brand direction; list any contradictions before implementation.
+
+## Phase 1 — Project foundation
+- Set up PHP front controller, router, config, PDO, sessions, error handling, CSRF, validator, authorization middleware.
+- Create schema, migrations/seed roles and one-time secure setup wizard.
+- Add public and portal layouts, design tokens and shared components.
+
+## Phase 2 — Public website
+- Implement Home, About, Principal, Vision/Mission, History, Achievements, Academics, Faculty, Hostel Life, Results, Gallery, Notices, Contact, policies and public nav/footer.
+- Add CMS-driven notices, gallery albums, editable content, staff profiles and program information.
+- Build missing Notices and Contact page visual language from approved design system; do not claim an approved mockup exists.
+
+## Phase 3 — Admission and alumni
+- Implement the application wizard with exact provided fields, server validation, draft/submit, safe uploads, tracking and admin review.
+- Personal/contact field set must be configurable until BRC supplies official list.
+- Implement alumni registration, duplicate checks, contribution options, admin review, privacy and consent controls.
+
+## Phase 4 — Authentication and role accounts
+- Login, logout, forgot/reset password, account creation/invitation by admin, role routing and audit logs.
+- Implement Admin, Teacher, Cadet and Parent account types with ownership constraints.
+
+## Phase 5 — Admin portal
+- Dashboard, admissions, alumni, cadets, parents, staff, departments, classes, subjects, timetables, attendance, assignments, exams, results, hostels, fees, notices, gallery, CMS, reports, users/roles, audit log, backups and settings.
+
+## Phase 6 — Teacher portal
+- Dashboard, assigned classes, students, timetable, attendance, assignments/submissions/grading, exam duties, results entry, authorized hostel remarks, notices, messages and profile.
+
+## Phase 7 — Cadet portal
+- Dashboard, profile, classes, timetable, assignment submissions, own attendance, published results/report cards, own fees, approved hostel details, notices and notifications.
+
+## Phase 8 — Parent portal
+- Dashboard, verified children, attendance, published results, fee invoices/payment status, leave applications, approved hostel details, teacher messages, notices and profile.
+
+## Phase 9 — Cross-cutting functionality
+- PDF/report cards/receipts, exports, notifications, file management, search/filter/pagination, audit, backups, content management and responsive behavior.
+
+## Phase 10 — Verification and delivery
+- Execute all acceptance tests in `ACCEPTANCE_TESTS.md`.
+- Run security tests and role-isolation tests.
+- Test 1440, 1024, 768 and 390/360 px widths.
+- Fix all PHP errors, console errors, broken links, SQL exceptions and upload issues.
+- Deliver source code, schema/migrations, seed data, README, installation steps and known limitations.
+- Do not mark complete while any required route is a dead link, static screenshot or unimplemented placeholder.
+
+## Priority rule
+Complete foundations before portals. Every module must be connected to the same database. Do not build a set of static demo pages that only look like the previews.
+
+
+##########################################################################################
+ACCEPTANCE TESTS
+##########################################################################################
+
+# ACCEPTANCE TESTS — DEFINITION OF DONE
+
+## Public website
+- [ ] Opening the root URL shows Home without login.
+- [ ] Every public nav/footer link works and has a valid destination.
+- [ ] Public pages use approved BRC design tokens, logo and responsive shared layout.
+- [ ] Admin-published notice/gallery/page content appears publicly; drafts/private items do not.
+- [ ] Search/filter/pagination work where shown.
+- [ ] Contact form validates and stores messages; no fake success if delivery integration is not configured.
+
+## Authentication & permissions
+- [ ] Guest can view public pages and cannot access private portals.
+- [ ] Admin login routes to Admin Dashboard.
+- [ ] Teacher login routes to Teacher Dashboard.
+- [ ] Cadet login routes to Cadet Dashboard.
+- [ ] Parent login routes to Parent Dashboard.
+- [ ] Disabled accounts cannot log in.
+- [ ] Teacher cannot access an unassigned class by editing the URL.
+- [ ] Cadet cannot access another cadet's record by changing an ID.
+- [ ] Parent cannot access a cadet who is not linked to that parent.
+- [ ] Non-admin roles cannot create admins/change roles.
+- [ ] CSRF checks, session regeneration, password hashing and login rate limits work.
+
+## Admissions
+- [ ] Apply page is public and does not require existing account.
+- [ ] Academic information labels match the supplied reference.
+- [ ] Fee details match the supplied reference.
+- [ ] Deposit slip PDF/JPG max 2 MB is enforced server-side.
+- [ ] Invalid/malicious files are rejected; accepted files are stored privately.
+- [ ] Submission creates unique application reference and status history.
+- [ ] Admin can review, verify payment manually, approve/reject with audit trail.
+- [ ] Approved application can be converted to cadet without duplicate record.
+- [ ] Applicant tracking does not expose other applications.
+
+## Alumni
+- [ ] Alumni form fields match source screenshot.
+- [ ] Duplicate Kit No, CNIC and email policies are enforced according to BRC policy.
+- [ ] Contribution checkboxes support multiple selections; “None” is mutually exclusive.
+- [ ] Application is pending until admin approval.
+- [ ] CNIC, DOB, address and contact details remain private in public views.
+
+## Academic workflow
+- [ ] Admin configures year, departments, classes, sections, subjects and teacher assignments.
+- [ ] Teacher sees only assigned classes/subjects.
+- [ ] Attendance cannot be duplicated for same cadet/session.
+- [ ] Attendance edits are auditable.
+- [ ] Assignments can be created, submitted, graded and feedback viewed.
+- [ ] Exam duties and marks are restricted to assigned staff.
+- [ ] Result validation rejects marks outside valid maximum.
+- [ ] Only published/approved results appear to cadet/parent/public channels.
+- [ ] Printable report card totals and grades are computed correctly.
+
+## Fees and hostel
+- [ ] Fee invoices/payments are linked to correct cadet/applicant.
+- [ ] Uploading deposit slip does not automatically mark a payment as paid.
+- [ ] Authorized finance admin can verify/reject with audit entry.
+- [ ] Hostel block/room capacity cannot be exceeded.
+- [ ] Only authorized users can see private hostel allocation/warden notes.
+
+## Admin and CMS
+- [ ] Dashboard metrics are derived from database records, not hardcoded mockup values.
+- [ ] Admin can create/edit/archive content, notices, gallery albums and staff/program records.
+- [ ] Sensitive actions require confirmation and audit record.
+- [ ] Reports have filters, pagination and role-protected exports.
+- [ ] Backup can be created and restored in a test environment.
+
+## Quality
+- [ ] No PHP warnings/fatal errors on required pages.
+- [ ] No unhandled JS errors in browser console.
+- [ ] No dead buttons or fake controls.
+- [ ] All forms have labels, validation, useful error messages and server-side checks.
+- [ ] No horizontal overflow at 1440, 1024, 768, 390 and 360 px.
+- [ ] Color contrast and keyboard focus are acceptable.
+- [ ] No sample/mockup data is represented as official data.
+- [ ] Setup and deployment instructions work on the target XAMPP environment.
+
+
+##########################################################################################
+DATABASE MODEL NOTES
+##########################################################################################
+
+# DATABASE MODEL NOTES
+
+`schema.sql` is an initial normalized baseline, not a replacement for review. The coding agent must inspect it, add missing columns/tables needed for implemented routes, create migrations and test on the XAMPP MariaDB version. Never drop/overwrite user data during upgrades.
+
+## Main relationship groups
+- `roles → users`; `roles ↔ permissions` through `role_permissions`.
+- `users → staff_profiles` for teachers/staff; `users → cadets` for student accounts; `users → parent_profiles`; `users → alumni_profiles` after approval.
+- `cadets ↔ guardians` through `cadet_guardians`; parent authorization must verify this link.
+- `academic_years → classes/subjects/exams`; `classes → sections`; `class_subjects` ties classes, subjects and academic years; `teacher_assignments` ties teachers to assigned class subjects.
+- `attendance_sessions → attendance_records → cadets`.
+- `assignments → assignment_submissions → cadets`.
+- `exams → exam_subjects → exam_marks`; `exam_duties` assigns staff to examinations.
+- `hostel_blocks → hostel_rooms → hostel_allocations → cadets`; `warden_remarks` has a visibility level.
+- `fee_invoices → fee_invoice_items` and `fee_payments`; payments remain pending until a finance-authorized user verifies.
+- `admission_applications → admission_documents / admission_fee_details / application_status_history`; conversion to `cadets` is a transactional one-time operation.
+- `alumni_profiles ↔ alumni_contribution_types` through `alumni_contributions`.
+- `notices → notice_attachments`; `gallery_albums → gallery_images`; `content_pages` and `site_settings` power public CMS.
+- `notifications`, `messages`, `leave_applications`, and `audit_logs` support communications and accountability.
+
+## Required additions during implementation
+- Define a proper `exam_results`/report-card aggregation service with rules approved by BRC; marks table is raw input only.
+- Add a timetable table set (e.g. `timetable_entries`) with unique period/room/teacher/class constraints.
+- Add import/export job tables only if bulk import/export is implemented.
+- Add file metadata/checksum/owner table if a unified upload registry is required.
+- Consider encrypted fields or restricted access for sensitive CNIC/account/guardian details according to BRC policy.
+- Add unique constraints only where the institution confirms uniqueness policy (e.g. parent emails may be shared by siblings).
+- Add all foreign keys/indexes needed for the final queries; test migrations on MariaDB, not only MySQL.
+
+## Database setup rules
+- Use prepared statements and transactions.
+- Do not use root DB credentials in production.
+- Do not insert illustrative mockup records as real college data.
+- Demo seed records, if supplied, must be clearly marked as fictional, removable and disabled from public output.
+- The initial Super Admin must be created through a one-time installer/CLI command that hashes a strong unique password; never commit a preset password.
+
+
+##########################################################################################
+IMPLEMENTATION TRACKER TEMPLATE
+##########################################################################################
+
+# IMPLEMENTATION TRACKER
+
+Coding agent: update this file as you work. Do not mark visual design as implementation completion.
+
+## Foundation
+- [ ] Inspect actual XAMPP/PHP/MariaDB environment
+- [ ] Project folders and front controller
+- [ ] Router and route registry
+- [ ] PDO configuration and safe environment config
+- [ ] Schema and migration system
+- [ ] Secure first-admin creation (no default password)
+- [ ] Session, CSRF, validation, RBAC and ownership middleware
+- [ ] Shared design tokens, public layout and portal layout
+
+## Public pages
+- [ ] Homepage
+- [ ] About Us
+- [ ] Principal Profile
+- [ ] Vision & Mission
+- [ ] History
+- [ ] Achievements
+- [ ] Academics
+- [ ] Faculty directory/profile
+- [ ] Hostel Life
+- [ ] Results/search/report view
+- [ ] Gallery/albums
+- [ ] Notices/detail/download
+- [ ] Contact Us
+- [ ] Online Admission wizard/tracking
+- [ ] Alumni Registration
+- [ ] Login/Forgot Password/Reset Password
+- [ ] Privacy and Terms
+
+## Admin
+- [ ] Dashboard metrics
+- [ ] Admissions review
+- [ ] Alumni review
+- [ ] Cadets
+- [ ] Parents and guardian linking
+- [ ] Staff/teachers
+- [ ] Departments/classes/sections/subjects
+- [ ] Timetable and teaching assignments
+- [ ] Attendance and reports
+- [ ] Assignments/submissions
+- [ ] Exams/duties
+- [ ] Results/grading/report cards
+- [ ] Hostels/rooms/allocations/warden remarks
+- [ ] Fees/invoices/payment verification
+- [ ] Notices and attachments
+- [ ] Gallery manager
+- [ ] CMS pages/homepage
+- [ ] Reports/exports
+- [ ] Users/roles/permissions
+- [ ] Notifications/audit log
+- [ ] Backup/restore/settings
+
+## Teacher
+- [ ] Dashboard
+- [ ] Assigned classes and roster
+- [ ] Timetable
+- [ ] Attendance
+- [ ] Assignments/submissions/grading
+- [ ] Exam duties
+- [ ] Authorized results entry
+- [ ] Allowed hostel remarks
+- [ ] Notices/messages/profile
+
+## Cadet
+- [ ] Dashboard/profile
+- [ ] Classes/timetable
+- [ ] Assignments/submissions
+- [ ] Own attendance
+- [ ] Published results/report card
+- [ ] Fees
+- [ ] Approved hostel info
+- [ ] Notices/notifications/settings
+
+## Parent
+- [ ] Dashboard and linked children
+- [ ] Child profile
+- [ ] Attendance
+- [ ] Published results/report card
+- [ ] Fees
+- [ ] Leave applications
+- [ ] Approved hostel information
+- [ ] Teacher communication
+- [ ] Notices/notifications/profile
+
+## Cross-cutting delivery
+- [ ] Secure file upload and private download controller
+- [ ] PDF report cards / fee receipts
+- [ ] Search, filtering and pagination
+- [ ] Notifications
+- [ ] Backup and restore test
+- [ ] Role/ownership penetration tests
+- [ ] Responsive QA at all required widths
+- [ ] Replace/flag unverified content
+- [ ] XAMPP local installation verified
+- [ ] Production deployment guide verified
+- [ ] Source project ZIP created
+
+## Current status
+**Handoff pack prepared; source project has not yet been generated by the coding agent.**
